@@ -42,6 +42,10 @@ const MainContent = styled.main`
 `;
 
 export default function Root(){
+    // useLocation() is a React Router hook that returns the current location object
+    // The location object contains information about the current URL, including the pathname
+    // Used here to detect which page the user is currently on so I can conditionally
+    // apply styles to only the projects page
     const location = useLocation();
     const isProjectsPage = location.pathname === '/projects';
 
@@ -50,6 +54,7 @@ export default function Root(){
             <Header />
             <Container>
                 <Nav/>
+                {/* Apply background image styling only when on the projects page */}
                 <MainContent style={isProjectsPage ? {
                     backgroundImage: "url('/calc.jpg')",
                     backgroundSize: 'cover',
