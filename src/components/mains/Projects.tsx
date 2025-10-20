@@ -1,6 +1,118 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 
+// Types
+type Operation = 'add' | 'subtract' | 'multiply' | 'divide' | 'power' | 'clear';
+
+interface CalculatorState {
+    inputOne: string;
+    inputTwo: string;
+    result: string;
+    resultColor: string;
+    setInputOne: (value: string) => void;
+    setInputTwo: (value: string) => void;
+    performOperation: (operation: Operation) => void;
+}
+
+interface CalculatorInputsProps {
+    inputOne: string;
+    inputTwo: string;
+    onInputOneChange: (value: string) => void;
+    onInputTwoChange: (value: string) => void;
+}
+
+interface CalculatorButtonsProps {
+    onOperation: (operation: Operation) => void;
+}
+
+interface CalculatorDisplayProps {
+    result: string;
+    resultColor: string;
+}
+
+// Custom Hook for Calculator Logic
+const useCalculator = (): CalculatorState => {
+    const [inputOne, setInputOne] = useState('');
+    const [inputTwo, setInputTwo] = useState('');
+    const [result, setResult] = useState('');
+    const [resultColor, setResultColor] = useState('black');
+
+    const updateResult = (value: number | string, isError: boolean = false): void => {
+        setResult(String(value));
+        if (isError) {
+            setResultColor('red');
+        } else {
+            setResultColor(typeof value === 'number' && value < 0 ? 'red' : 'black');
+        }
+    };
+
+    const performOperation = (operation: Operation): void => {
+        const num1 = Number(inputOne);
+        const num2 = Number(inputTwo);
+
+        switch (operation) {
+            case 'add': {
+                updateResult(num1 + num2);
+                break;
+            }
+            case 'subtract': {
+                updateResult(num1 - num2);
+                break;
+            }
+            case 'multiply': {
+                updateResult(num1 * num2);
+                break;
+            }
+            case 'divide': {
+                if (num2 === 0) {
+                    updateResult('undefined', true);
+                } else {
+                    updateResult(num1 / num2);
+                }
+                break;
+            }
+            case 'power': {
+                let res = 1;
+                const exponent = num2;
+                if (exponent === 0) {
+                    res = 1;
+                } else if (exponent > 0) {
+                    for (let i = 0; i < exponent; i++) {
+                        res *= num1;
+                    }
+                } else {
+                    for (let i = 0; i < -exponent; i++) {
+                        res *= num1;
+                    }
+                    res = 1 / res;
+                }
+                updateResult(res);
+                break;
+            }
+            case 'clear': {
+                setInputOne('');
+                setInputTwo('');
+                setResult('');
+                setResultColor('black');
+                break;
+            }
+            default:
+                break;
+        }
+    };
+
+    return {
+        inputOne,
+        inputTwo,
+        result,
+        resultColor,
+        setInputOne,
+        setInputTwo,
+        performOperation
+    };
+};
+
+// Styled Components
 const Content = styled.div`
     margin-top: 8%;
     display: flex;
@@ -20,7 +132,7 @@ const CalculatorWrapper = styled.div`
     box-sizing: border-box;
 `;
 
-const Calculator = styled.div`
+const CalculatorContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -47,8 +159,8 @@ const Buttons = styled.div`
 `;
 
 const Button = styled.button`
-    width: 40px;
-    height: 40px;
+    width: calc(20px + 1.5vw);
+    height: calc(20px + 1.5vw);
     margin-right: 8px;
     border-radius: 50%;
     border: none;
@@ -79,125 +191,90 @@ const PageTitle = styled.h3`
     margin-top: 2%;
 `;
 
+// Input Component
+const CalculatorInputs = ({
+                              inputOne,
+                              inputTwo,
+                              onInputOneChange,
+                              onInputTwoChange
+                          }: CalculatorInputsProps) => {
+    return (
+        <>
+            <CalcInput
+                type="number"
+                value={inputOne}
+                onChange={(e) => onInputOneChange(e.target.value)}
+                placeholder="Enter first number"
+            />
+            <CalcInput
+                type="number"
+                value={inputTwo}
+                onChange={(e) => onInputTwoChange(e.target.value)}
+                placeholder="Enter second number"
+            />
+        </>
+    );
+};
+
+// Button Component
+const CalculatorButtons = ({ onOperation }: CalculatorButtonsProps) => {
+    return (
+        <Buttons>
+            <Button onClick={() => onOperation('add')}>+</Button>
+            <Button onClick={() => onOperation('subtract')}>-</Button>
+            <Button onClick={() => onOperation('multiply')}>*</Button>
+            <Button onClick={() => onOperation('divide')}>/</Button>
+            <Button onClick={() => onOperation('power')}>**</Button>
+            <Button onClick={() => onOperation('clear')}>C</Button>
+        </Buttons>
+    );
+};
+
+// Display Component
+const CalculatorDisplay = ({ result, resultColor }: CalculatorDisplayProps) => {
+    return (
+        <Output style={{ color: resultColor }}>
+            {result || '0'}
+        </Output>
+    );
+};
+
+// Main Calculator Component
+const Calculator = () => {
+    const {
+        inputOne,
+        inputTwo,
+        result,
+        resultColor,
+        setInputOne,
+        setInputTwo,
+        performOperation
+    } = useCalculator();
+
+    return (
+        <CalculatorContainer>
+            <CalculatorInputs
+                inputOne={inputOne}
+                inputTwo={inputTwo}
+                onInputOneChange={setInputOne}
+                onInputTwoChange={setInputTwo}
+            />
+            <CalculatorButtons onOperation={performOperation} />
+            <CalculatorDisplay result={result} resultColor={resultColor} />
+        </CalculatorContainer>
+    );
+};
+
+// Main Projects Component
 export default function Projects() {
-    const [inputOne, setInputOne] = useState<string>('');
-    const [inputTwo, setInputTwo] = useState<string>('');
-    const [result, setResult] = useState<string>('');
-    const [resultColor, setResultColor] = useState<string>('black');
-
-    const doAdd = () => {
-        const res = Number(inputOne) + Number(inputTwo);
-        setResult(String(res));
-        if (res < 0) {
-            setResultColor('red');
-        } else {
-            setResultColor('black');
-        }
-    };
-
-    const doSubtract = () => {
-        const res = Number(inputOne) - Number(inputTwo);
-        setResult(String(res));
-        if (res < 0) {
-            setResultColor('red');
-        } else {
-            setResultColor('black');
-        }
-    };
-
-    const doMultiply = () => {
-        const res = Number(inputOne) * Number(inputTwo);
-        setResult(String(res));
-        if (res < 0) {
-            setResultColor('red');
-        } else {
-            setResultColor('black');
-        }
-    };
-
-    const doDivide = () => {
-        const num1 = Number(inputOne);
-        const num2 = Number(inputTwo);
-        if (num2 === 0) {
-            setResult("undefined");
-            setResultColor('red');
-        } else {
-            const res = num1 / num2;
-            setResult(String(res));
-            if (res < 0) {
-                setResultColor('red');
-            } else {
-                setResultColor('black');
-            }
-        }
-    };
-
-    const doPower = () => {
-        const base = Number(inputOne);
-        const exponent = Number(inputTwo);
-        let res = 1;
-
-        if (exponent === 0) {
-            res = 1;
-        } else if (exponent > 0) {
-            for (let i = 0; i < exponent; i++) {
-                res *= base;
-            }
-        } else {
-            for (let i = 0; i < -exponent; i++) {
-                res *= base;
-            }
-            res = 1 / res;
-        }
-        setResult(String(res));
-        if (res < 0) {
-            setResultColor('red');
-        } else {
-            setResultColor('black');
-        }
-    };
-
-    const doClear = () => {
-        setInputOne('');
-        setInputTwo('');
-        setResult('');
-        setResultColor('black');
-    };
-
     return (
         <>
             <PageTitle>Projects</PageTitle>
             <Content>
                 <CalcTitle>Worlds Best Calculator!</CalcTitle>
-                <br/>
-
+                <br />
                 <CalculatorWrapper>
-                    <Calculator>
-                        <CalcInput
-                            type="number"
-                            value={inputOne}
-                            onChange={(e) => setInputOne(e.target.value)}
-                            placeholder="Enter first number"
-                        />
-                        <CalcInput
-                            type="number"
-                            value={inputTwo}
-                            onChange={(e) => setInputTwo(e.target.value)}
-                            placeholder="Enter second number"
-                        />
-
-                        <Buttons>
-                            <Button onClick={doAdd}>+</Button>
-                            <Button onClick={doSubtract}>-</Button>
-                            <Button onClick={doMultiply}>*</Button>
-                            <Button onClick={doDivide}>/</Button>
-                            <Button onClick={doPower}>**</Button>
-                            <Button onClick={doClear}>C</Button>
-                        </Buttons>
-                        <Output style={{color: resultColor}}>
-                            {result || '0'}
-                        </Output>
-                    </Calculator>
+                    <Calculator />
                 </CalculatorWrapper>
             </Content>
         </>
